@@ -3,3 +3,5 @@ data/qagarden.json
 data/*.tmp
 .env
 .DS_Store
+.env.*
+!.env.example

@@ -7,41 +7,11 @@ const crypto = require("crypto");
 const { URL } = require("url");
 
 const PORT = Number(process.env.PORT || 3001);
-const DATA_DIR = path.join(__dirname, "data");
-const DB_FILE = path.join(DATA_DIR, "qagarden.json");
 const PUBLIC_DIR = path.join(__dirname, "public");
 const TOTAL_CHECKS = 36;
 const SESSION_TTL = 12 * 60 * 60 * 1000;
-const sessions = new Map();
-const authAttempts = new Map();
-
-fs.mkdirSync(DATA_DIR, { recursive: true });
-
-function defaultDb() {
-  return { version: 2, manager: null, testers: [], projects: [] };
-}
-
-function readDb() {
-  try {
-    if (!fs.existsSync(DB_FILE)) return defaultDb();
-    const parsed = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
-    return {
-      ...defaultDb(),
-      ...parsed,
-      testers: Array.isArray(parsed.testers) ? parsed.testers : [],
-      projects: Array.isArray(parsed.projects) ? parsed.projects : []
-    };
-  } catch (error) {
-    console.error("Could not read database:", error);
-    return defaultDb();
-  }
-}
-
-function writeDb(db) {
-  const tmp = `${DB_FILE}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(db, null, 2), "utf8");
-  fs.renameSync(tmp, DB_FILE);
-}
+const storage = require("./lib/storage");
+const { readDb, writeDb } = storage;
 
 function id(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(5).toString("hex")}`;
@@ -98,15 +68,12 @@ function parseCookies(req) {
   );
 }
 
-function sessionUser(req, db) {
+async function sessionUser(req, db) {
   const token = parseCookies(req)["qagarden.sid"];
   if (!token) return null;
-  const entry = sessions.get(token);
-  if (!entry || entry.expiresAt < Date.now()) {
-    if (entry) sessions.delete(token);
-    return null;
-  }
-  entry.expiresAt = Date.now() + SESSION_TTL;
+  const entry = await storage.getSession(token);
+  if (!entry) return null;
+  await storage.refreshSession(token, SESSION_TTL / 1000);
   if (entry.role === "manager") {
     return db.manager?.id === entry.userId ? { ...db.manager, role: "manager" } : null;
   }
@@ -114,16 +81,18 @@ function sessionUser(req, db) {
   return tester ? { ...tester, role: "tester" } : null;
 }
 
-function createSession(res, user) {
+async function createSession(res, user) {
   const token = crypto.randomBytes(32).toString("hex");
-  sessions.set(token, { userId: user.id, role: user.role, expiresAt: Date.now() + SESSION_TTL });
-  res.setHeader("Set-Cookie", `qagarden.sid=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL / 1000}`);
+  await storage.setSession(token, { userId: user.id, role: user.role }, SESSION_TTL / 1000);
+  const secure = process.env.VERCEL ? "; Secure" : "";
+  res.setHeader("Set-Cookie", `qagarden.sid=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL / 1000}${secure}`);
 }
 
-function clearSession(req, res) {
+async function clearSession(req, res) {
   const token = parseCookies(req)["qagarden.sid"];
-  if (token) sessions.delete(token);
-  res.setHeader("Set-Cookie", "qagarden.sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0");
+  if (token) await storage.deleteSession(token);
+  const secure = process.env.VERCEL ? "; Secure" : "";
+  res.setHeader("Set-Cookie", `qagarden.sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`);
 }
 
 function canAccessProject(user, project) {
@@ -174,17 +143,10 @@ function readJson(req) {
   });
 }
 
-function authAllowed(req) {
-  const key = req.socket.remoteAddress || "local";
-  const now = Date.now();
-  const record = authAttempts.get(key) || { count: 0, resetAt: now + 15 * 60 * 1000 };
-  if (record.resetAt < now) {
-    record.count = 0;
-    record.resetAt = now + 15 * 60 * 1000;
-  }
-  record.count += 1;
-  authAttempts.set(key, record);
-  return record.count <= 40;
+async function authAllowed(req) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  const remote = forwarded || req.socket?.remoteAddress || "local";
+  return storage.rateLimit(`auth:${remote}`, 40, 15 * 60);
 }
 
 function matchPath(pathname, pattern) {
@@ -193,17 +155,21 @@ function matchPath(pathname, pattern) {
 }
 
 async function handleApi(req, res, url) {
-  const db = readDb();
-  const user = sessionUser(req, db);
+  const db = await readDb();
+  const user = await sessionUser(req, db);
   const method = req.method || "GET";
   const pathname = url.pathname;
+
+  if (method === "GET" && pathname === "/api/health") {
+    return json(res, 200, { ok: true, storage: storage.mode() });
+  }
 
   if (method === "GET" && pathname === "/api/bootstrap") {
     return json(res, 200, { setupRequired: !db.manager, user: safeUser(user) });
   }
 
   if (method === "POST" && pathname === "/api/setup") {
-    if (!authAllowed(req)) return json(res, 429, { error: "Too many attempts. Try again later." });
+    if (!(await authAllowed(req))) return json(res, 429, { error: "Too many attempts. Try again later." });
     if (db.manager) return json(res, 409, { error: "The manager account has already been created." });
     const body = await readJson(req);
     const name = String(body.name || "").trim();
@@ -215,14 +181,14 @@ async function handleApi(req, res, url) {
     const passwordData = hashPassword(password);
     const now = new Date().toISOString();
     db.manager = { id: id("manager"), name, email, passwordSalt: passwordData.salt, passwordHash: passwordData.hash, createdAt: now, updatedAt: now };
-    writeDb(db);
+    await writeDb(db);
     const account = { ...db.manager, role: "manager" };
-    createSession(res, account);
+    await createSession(res, account);
     return json(res, 201, { user: safeUser(account) });
   }
 
   if (method === "POST" && pathname === "/api/login") {
-    if (!authAllowed(req)) return json(res, 429, { error: "Too many attempts. Try again later." });
+    if (!(await authAllowed(req))) return json(res, 429, { error: "Too many attempts. Try again later." });
     const body = await readJson(req);
     const requestedRole = body.role === "manager" || body.role === "tester" ? body.role : "";
     const email = normaliseEmail(body.email);
@@ -236,12 +202,12 @@ async function handleApi(req, res, url) {
     if (!account || !verifyPassword(password, account.passwordSalt, account.passwordHash)) {
       return json(res, 401, { error: `Incorrect ${requestedRole} email address or password.` });
     }
-    createSession(res, account);
+    await createSession(res, account);
     return json(res, 200, { user: safeUser(account) });
   }
 
   if (method === "POST" && pathname === "/api/logout") {
-    clearSession(req, res);
+    await clearSession(req, res);
     return noContent(res);
   }
 
@@ -280,7 +246,7 @@ async function handleApi(req, res, url) {
       const now = new Date().toISOString();
       const tester = { id: id("tester"), name, email, passwordSalt: passwordData.salt, passwordHash: passwordData.hash, active: true, createdAt: now, updatedAt: now };
       db.testers.push(tester);
-      writeDb(db);
+      await writeDb(db);
       return json(res, 201, { tester: { id: tester.id, name: tester.name, email: tester.email, createdAt: tester.createdAt, updatedAt: tester.updatedAt } });
     }
 
@@ -305,7 +271,7 @@ async function handleApi(req, res, url) {
         tester.passwordSalt = passwordData.salt;
         tester.passwordHash = passwordData.hash;
       }
-      writeDb(db);
+      await writeDb(db);
       return json(res, 200, { tester: { id: tester.id, name: tester.name, email: tester.email, createdAt: tester.createdAt, updatedAt: tester.updatedAt } });
     }
 
@@ -316,7 +282,7 @@ async function handleApi(req, res, url) {
       if (assigned.length) return json(res, 409, { error: `Reassign or delete ${assigned.length} audit${assigned.length === 1 ? "" : "s"} before deleting this tester.` });
       tester.active = false;
       tester.updatedAt = new Date().toISOString();
-      writeDb(db);
+      await writeDb(db);
       return noContent(res);
     }
   }
@@ -343,7 +309,7 @@ async function handleApi(req, res, url) {
     const now = new Date().toISOString();
     const project = { id: id("project"), name, url: websiteUrl, dueDate, notes, assigneeType, testerId: testerIdValue, checks: buildChecks(), checkMeta: {}, signoff: null, createdAt: now, updatedAt: now };
     db.projects.unshift(project);
-    writeDb(db);
+    await writeDb(db);
     return json(res, 201, { project: publicProject(project) });
   }
 
@@ -364,7 +330,7 @@ async function handleApi(req, res, url) {
       return json(res, 400, { error: "Choose a valid tester account." });
     }
     Object.assign(project, { name, url: websiteUrl, dueDate, notes, assigneeType, testerId: testerIdValue, updatedAt: new Date().toISOString() });
-    writeDb(db);
+    await writeDb(db);
     return json(res, 200, { project: publicProject(project) });
   }
 
@@ -373,7 +339,7 @@ async function handleApi(req, res, url) {
     const before = db.projects.length;
     db.projects = db.projects.filter((item) => item.id !== projectId[0]);
     if (before === db.projects.length) return json(res, 404, { error: "Audit not found." });
-    writeDb(db);
+    await writeDb(db);
     return noContent(res);
   }
 
@@ -390,7 +356,7 @@ async function handleApi(req, res, url) {
     if (checked) project.checkMeta[checkPath[1]] = { userId: user.id, name: user.name, role: user.role, checkedAt: new Date().toISOString() };
     else delete project.checkMeta[checkPath[1]];
     project.updatedAt = new Date().toISOString();
-    writeDb(db);
+    await writeDb(db);
     return json(res, 200, { project: publicProject(project) });
   }
 
@@ -404,7 +370,7 @@ async function handleApi(req, res, url) {
     const body = await readJson(req);
     project.signoff = { signedById: user.id, signedByName: user.name, signedByRole: user.role, signedAt: new Date().toISOString(), note: String(body.note || "").trim() };
     project.updatedAt = new Date().toISOString();
-    writeDb(db);
+    await writeDb(db);
     return json(res, 200, { project: publicProject(project) });
   }
 
@@ -414,7 +380,7 @@ async function handleApi(req, res, url) {
     if (!project) return json(res, 404, { error: "Audit not found." });
     project.signoff = null;
     project.updatedAt = new Date().toISOString();
-    writeDb(db);
+    await writeDb(db);
     return json(res, 200, { project: publicProject(project) });
   }
 
@@ -446,24 +412,39 @@ function serveStatic(res, pathname) {
   fs.createReadStream(filePath).pipe(res);
 }
 
-const server = http.createServer(async (req, res) => {
+async function requestHandler(req, res) {
   try {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+    if (url.pathname === "/api/index" && url.searchParams.has("path")) {
+      const rewritten = String(url.searchParams.get("path") || "").replace(/^\/+/, "");
+      url.pathname = `/api/${rewritten}`;
+      url.searchParams.delete("path");
+    }
     if (url.pathname.startsWith("/api/")) await handleApi(req, res, url);
     else if (req.method === "GET" || req.method === "HEAD") serveStatic(res, url.pathname);
     else json(res, 405, { error: "Method not allowed." });
   } catch (error) {
     console.error(error);
-    if (!res.headersSent) json(res, 500, { error: error.message === "Request too large." ? error.message : "Unexpected server error." });
-    else res.end();
+    if (!res.headersSent) {
+      if (error.code === "STORAGE_NOT_CONFIGURED") {
+        json(res, 503, { error: error.message, code: error.code });
+      } else if (error.code === "STORAGE_ERROR") {
+        json(res, 502, { error: "Cloud storage is unavailable. Verify the Upstash environment variables and redeploy.", code: error.code });
+      } else {
+        json(res, 500, { error: error.message === "Request too large." ? error.message : "Unexpected server error." });
+      }
+    } else {
+      res.end();
+    }
   }
-});
+}
 
-setInterval(() => {
-  const now = Date.now();
-  for (const [token, entry] of sessions) if (entry.expiresAt < now) sessions.delete(token);
-}, 30 * 60 * 1000).unref();
+module.exports = requestHandler;
 
-server.listen(PORT, () => {
-  console.log(`QAGarden is running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  const server = http.createServer(requestHandler);
+  server.listen(PORT, () => {
+    console.log(`QAGarden is running at http://localhost:${PORT}`);
+    console.log(`Storage mode: ${storage.mode()}`);
+  });
+}

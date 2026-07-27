@@ -1,34 +1,49 @@
-# QAGarden v3.1 Stable
+# QAGarden v3.2 — Vercel Storage Fix
 
-A role-based QA checklist and sign-off workspace with a polished animated interface.
+This release fixes the `/api/setup` 500 error on Vercel.
 
-## Highlights
+## Why the earlier deployment failed
 
-- Role selection appears before login: **QA Manager** or **QA Tester**
-- First manager selection creates the single protected manager account
-- Manager login and tester login are validated separately
-- Manager can create tester accounts by email, assign projects, test audits and reopen sign-offs
-- Tester sees only assigned projects, checklist and sign-off
-- 36 focused checks with 100% completion required before sign-off
-- Server-side sessions and scrypt password hashing
-- Animated 3D QA cube, floating audit cards, parallax and polished hover effects
-- Responsive design and reduced-motion accessibility support
+The previous server stored users, projects, checklist progress and sessions in `data/qagarden.json`. That works locally, but a Vercel Function cannot persist writes inside the deployed project directory. This release uses Upstash Redis in Vercel and keeps the JSON-file fallback only for local development.
 
-## Run
+## Local run
 
 ```bash
-cd qagarden-auth-v3
 npm start
 ```
 
 Open `http://localhost:3001`.
 
-No `npm install` is required. Data is stored locally in `data/qagarden.json`, which is ignored by Git.
+Local data is saved in `data/qagarden.json`.
 
+## Required Vercel setup
 
-## Stability hotfix
+1. Open the QAGarden project in Vercel.
+2. Open **Storage / Marketplace**.
+3. Add **Upstash Redis** and connect it to this project.
+4. Confirm these environment variables exist in the Vercel project:
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
+5. Redeploy the latest Git commit.
+6. Open `/api/health`. It should return:
 
-- Removed full-page mouse tilt that could make the authentication screen jump or clip.
-- Kept the 3D QA object animation isolated inside the visual panel.
-- Stabilised role-card hover, form focus and Chrome/macOS rendering.
-- Added cache-busted CSS and JavaScript URLs.
+```json
+{"ok":true,"storage":"upstash-redis"}
+```
+
+If storage is missing, the API now returns a readable `503` message instead of an unexplained `500`.
+
+## Git update
+
+```bash
+git add .
+git commit -m "Fix Vercel persistence with Upstash Redis"
+git push origin main
+```
+
+## Security
+
+- Passwords are hashed with scrypt.
+- Sessions are server-side and stored in Redis.
+- Authentication cookies are HttpOnly, SameSite=Lax and Secure on Vercel.
+- Never commit `.env` or Redis tokens.

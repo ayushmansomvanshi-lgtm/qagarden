@@ -1,8 +1,8 @@
 {
   "name": "qagarden",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "private": true,
-  "description": "Stable role-based website QA checklist and sign-off workspace",
+  "description": "Vercel-ready role-based website QA checklist with persistent Upstash Redis storage",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

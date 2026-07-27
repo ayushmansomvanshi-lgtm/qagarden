@@ -1158,3 +1158,5 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 @media (prefers-reduced-motion: reduce) {
   .auth-shell { animation: none !important; }
 }
+
+/* QAGarden v3.2: Vercel persistence/API compatibility release. */
