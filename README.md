@@ -1,55 +1,26 @@
-# QAGarden v3.7 — Aurora Command UI
+# QAGarden v3.5 — Tester Login & Redis Sync Fix
 
-This release is a **UI-only redesign** built on the stable QAGarden v3.5 authentication and Redis/KV backend.
+This release fixes the case where a tester exists in the Manager dashboard but the Tester login still says the workspace/account is not ready.
 
-## Visual update
+## What was fixed
 
-- Premium dark command-centre sidebar
-- Aurora blue, violet and cyan gradient system
-- Glass-style top bar, panels, dialogs and notifications
-- Redesigned role selection and login screens
-- Refined manager dashboard, tester panel, projects and tables
-- Improved checklist cards, status controls and sign-off screens
-- Stable hover, entrance and micro-interaction animations
-- Responsive mobile, tablet and desktop layouts
-- Light and dark theme support
-- No generated images or external image assets
+- Tester login no longer incorrectly depends on a separate `manager exists` pre-check.
+- QAGarden detects all supported Vercel KV and Upstash REST variable pairs.
+- When both `KV_*` and `UPSTASH_*` variables exist, QAGarden reads and merges the existing QAGarden data instead of silently choosing an empty database.
+- Manager, tester, project and session data are synchronized across configured Redis aliases/databases.
+- Existing manager/tester data is self-healed on the first request after deployment.
+- Tester login gives a precise password/account error rather than a misleading setup error.
 
-## Functionality preserved
+## Deploy
 
-The following files are unchanged from the stable functional release:
+Copy these files over the existing Git repository, commit, push, and let Vercel redeploy. Then hard refresh the production URL.
 
-- `server.js`
-- `api/index.js`
-- `lib/storage.js`
-- `public/app.js`
+Verify:
 
-Therefore manager authentication, tester email/password accounts, project assignment, Redis/KV persistence, checklist completion and sign-off behaviour remain unchanged.
+`/api/health`
 
-## Run locally
+The response should show version `3.5.0`, `configured: true`, and one or more configured stores.
 
-```bash
-cd qagarden-v3.7-aurora-dashboard-ui
-npm start
-```
+## v3.6 editorial UI release
 
-Open:
-
-```text
-http://localhost:3001
-```
-
-No external npm package installation is required.
-
-## Vercel
-
-The existing Vercel KV/Upstash variables remain compatible:
-
-```text
-KV_REST_API_URL
-KV_REST_API_TOKEN
-```
-
-The legacy Upstash variable names are also supported by the unchanged storage layer.
-
-See `GIT-UPDATE.md` for the exact update and deployment commands.
+This release changes presentation only. It adds `public/studio-ui.css` as a visual override inspired by bold editorial portfolio galleries. Authentication, manager/tester permissions, API routes, Redis/KV storage, audit assignments, checklist state and sign-off functions are unchanged from v3.5.

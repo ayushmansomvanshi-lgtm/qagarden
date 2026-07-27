@@ -6,8 +6,8 @@ These commands preserve `.git`, `node_modules` and local `data/qagarden.json`.
 
 ```bash
 cd ~/Desktop
-rm -rf qagarden-v3.7-aurora-dashboard-ui
-unzip -o ~/Downloads/qagarden-v3.7-aurora-dashboard-ui.zip -d ~/Desktop
+rm -rf qagarden-v3.7.1-aurora-dashboard-ui
+unzip -o ~/Downloads/qagarden-v3.7.1-aurora-dashboard-ui.zip -d ~/Desktop
 ```
 
 ## 2. Copy the UI release into the existing repository
@@ -17,7 +17,7 @@ rsync -av --delete \
   --exclude=".git" \
   --exclude="node_modules" \
   --exclude="data/qagarden.json" \
-  ~/Desktop/qagarden-v3.7-aurora-dashboard-ui/ \
+  ~/Desktop/qagarden-v3.7.1-aurora-dashboard-ui/ \
   ~/Desktop/qagarden-auth-v2/
 ```
 
@@ -38,7 +38,7 @@ Stop the server with `Control + C`, then run:
 cd ~/Desktop/qagarden-auth-v2
 git status
 git add .
-git commit -m "Upgrade QAGarden to v3.7 Aurora Command UI"
+git commit -m "Upgrade QAGarden to v3.7.1 Aurora Command UI"
 git push origin main
 ```
 

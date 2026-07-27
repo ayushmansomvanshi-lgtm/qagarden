@@ -1,6 +1,41 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="17" fill="#090a08"/>
-  <rect x="5" y="5" width="54" height="54" rx="13" fill="#dfff00"/>
-  <path d="M46.7 16.5c-13.1.4-24.3 5.2-29.5 13.2-4.2 6.5-2.7 13.6-1.9 15.9.3.9 1.1 1.4 2.1 1.4 4.4.1 14.5-.3 21.7-7.7 6.2-6.4 7.8-15.8 7.6-22.8Z" fill="#090a08"/>
-  <path d="M17.1 47c5.4-10 12.9-17.3 23.1-22.8" fill="none" stroke="#dfff00" stroke-width="3.2" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">QAGarden</title>
+  <desc id="desc">A luminous Q mark with a growing leaf on an aurora background.</desc>
+  <defs>
+    <linearGradient id="aurora" x1="48" y1="32" x2="460" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6f5cff"/>
+      <stop offset="0.48" stop-color="#4a63ff"/>
+      <stop offset="1" stop-color="#11d8d0"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="287" y1="128" x2="381" y2="239" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#dfff73"/>
+      <stop offset="1" stop-color="#44f0bd"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(120 80) rotate(43) scale(420)">
+      <stop stop-color="#ffffff" stop-opacity=".42"/>
+      <stop offset=".36" stop-color="#ffffff" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#050818" flood-opacity=".55"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="124" fill="#080d20"/>
+  <rect x="18" y="18" width="476" height="476" rx="112" fill="url(#aurora)"/>
+  <rect x="42" y="42" width="428" height="428" rx="94" fill="#0a1028" fill-opacity=".88" stroke="#fff" stroke-opacity=".2" stroke-width="4" filter="url(#shadow)"/>
+  <rect x="42" y="42" width="428" height="428" rx="94" fill="url(#glow)"/>
+
+  <!-- Q mark -->
+  <circle cx="244" cy="248" r="112" fill="none" stroke="#fff" stroke-width="54"/>
+  <path d="M314 323 389 398" fill="none" stroke="#fff" stroke-width="54" stroke-linecap="round"/>
+
+  <!-- Garden leaf -->
+  <path d="M365 120c-56 3-93 23-109 57-13 27-7 58-2 73 2 7 8 12 16 12 27 0 64-8 89-36 24-27 31-67 27-92-1-9-10-15-21-14Z" fill="url(#leaf)"/>
+  <path d="M265 250c23-47 55-79 98-103" fill="none" stroke="#0a1028" stroke-width="16" stroke-linecap="round"/>
+  <path d="m281 205 18 18 37-42" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- subtle status spark -->
+  <circle cx="116" cy="390" r="13" fill="#45f0bd"/>
+  <circle cx="116" cy="390" r="25" fill="none" stroke="#45f0bd" stroke-opacity=".25" stroke-width="8"/>
 </svg>
