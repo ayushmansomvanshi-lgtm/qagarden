@@ -224,13 +224,17 @@ async function handleApi(req, res, url) {
   if (method === "POST" && pathname === "/api/login") {
     if (!authAllowed(req)) return json(res, 429, { error: "Too many attempts. Try again later." });
     const body = await readJson(req);
+    const requestedRole = body.role === "manager" || body.role === "tester" ? body.role : "";
     const email = normaliseEmail(body.email);
     const password = String(body.password || "");
-    const manager = db.manager?.email === email ? { ...db.manager, role: "manager" } : null;
-    const tester = db.testers.find((item) => item.email === email && item.active !== false);
-    const account = manager || (tester ? { ...tester, role: "tester" } : null);
+    if (!requestedRole) return json(res, 400, { error: "Choose Manager or Tester before signing in." });
+    const manager = requestedRole === "manager" && db.manager?.email === email ? { ...db.manager, role: "manager" } : null;
+    const testerRecord = requestedRole === "tester"
+      ? db.testers.find((item) => item.email === email && item.active !== false)
+      : null;
+    const account = manager || (testerRecord ? { ...testerRecord, role: "tester" } : null);
     if (!account || !verifyPassword(password, account.passwordSalt, account.passwordHash)) {
-      return json(res, 401, { error: "Incorrect email address or password." });
+      return json(res, 401, { error: `Incorrect ${requestedRole} email address or password.` });
     }
     createSession(res, account);
     return json(res, 200, { user: safeUser(account) });

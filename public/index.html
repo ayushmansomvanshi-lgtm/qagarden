@@ -39,19 +39,46 @@
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
 
   <section id="authScreen" class="auth-screen">
+    <div class="auth-grid-glow" aria-hidden="true"></div>
     <div class="auth-orb auth-orb-one"></div>
     <div class="auth-orb auth-orb-two"></div>
-    <div class="auth-shell">
+    <div class="auth-orb auth-orb-three"></div>
+
+    <div class="auth-shell" id="authShell">
       <aside class="auth-story">
-        <div class="brand brand-light">
+        <div class="brand brand-light auth-brand">
           <span class="brand-symbol"><svg><use href="#i-leaf"></use></svg></span>
           <div><strong>QAGarden</strong><small>QA Checklist & Sign-off</small></div>
         </div>
-        <div class="auth-copy">
-          <span class="auth-kicker"><svg><use href="#i-shield"></use></svg> Focused quality control</span>
-          <h1>Every check.<br><span>Clearly owned.</span><br>Properly signed.</h1>
-          <p>Assign audits by email, test projects as a manager, track completion and keep every sign-off accountable.</p>
+
+        <div class="auth-story-layout">
+          <div class="auth-copy">
+            <span class="auth-kicker"><svg><use href="#i-shield"></use></svg> Intelligent quality workspace</span>
+            <h1>Quality checks.<br><span>Beautifully controlled.</span></h1>
+            <p>Managers assign and test audits. Testers see only their assigned projects, complete every checkpoint and submit a secure sign-off.</p>
+          </div>
+
+          <div class="quality-visual" aria-hidden="true">
+            <div class="visual-halo"></div>
+            <div class="orbit orbit-one"><span></span></div>
+            <div class="orbit orbit-two"><span></span></div>
+            <div class="orbit orbit-three"><span></span></div>
+            <div class="qa-cube-wrap">
+              <div class="qa-cube">
+                <div class="cube-face cube-front"><svg><use href="#i-check"></use></svg><b>QA</b></div>
+                <div class="cube-face cube-back"><svg><use href="#i-shield"></use></svg></div>
+                <div class="cube-face cube-right"><svg><use href="#i-sign"></use></svg></div>
+                <div class="cube-face cube-left"><svg><use href="#i-clipboard"></use></svg></div>
+                <div class="cube-face cube-top"><svg><use href="#i-leaf"></use></svg></div>
+                <div class="cube-face cube-bottom"><svg><use href="#i-users"></use></svg></div>
+              </div>
+            </div>
+            <div class="float-card float-card-a"><span class="float-icon success"><svg><use href="#i-check"></use></svg></span><div><b>36/36</b><small>Checks complete</small></div></div>
+            <div class="float-card float-card-b"><span class="float-icon"><svg><use href="#i-users"></use></svg></span><div><b>2 roles</b><small>Controlled access</small></div></div>
+            <div class="float-card float-card-c"><span class="live-dot"></span><div><b>Audit ready</b><small>Secure sign-off</small></div></div>
+          </div>
         </div>
+
         <div class="auth-metrics">
           <div class="metric-card"><span class="metric-icon"><svg><use href="#i-clipboard"></use></svg></span><strong>36</strong><small>Focused checks</small></div>
           <div class="metric-card"><span class="metric-icon"><svg><use href="#i-users"></use></svg></span><strong>2</strong><small>Controlled roles</small></div>
@@ -61,10 +88,46 @@
 
       <main class="auth-panel">
         <div class="auth-panel-inner">
+          <div id="roleView" class="auth-view role-view">
+            <span class="pill"><svg><use href="#i-lock"></use></svg> Secure role-based access</span>
+            <h2>Who is signing in?</h2>
+            <p class="auth-intro">Choose your workspace role first. QAGarden will open the correct login and dashboard for you.</p>
+
+            <div class="role-choice-grid">
+              <button class="role-choice manager-choice" type="button" data-auth-role="manager">
+                <span class="role-choice-shine"></span>
+                <span class="role-choice-icon"><svg><use href="#i-shield"></use></svg></span>
+                <span class="role-choice-copy">
+                  <strong>QA Manager</strong>
+                  <small>Assign projects, create testers, run audits and approve sign-offs.</small>
+                </span>
+                <span id="managerRoleState" class="role-state">Manager sign in</span>
+                <span class="role-arrow"><svg><use href="#i-arrow"></use></svg></span>
+              </button>
+
+              <button class="role-choice tester-choice" type="button" data-auth-role="tester">
+                <span class="role-choice-shine"></span>
+                <span class="role-choice-icon"><svg><use href="#i-check"></use></svg></span>
+                <span class="role-choice-copy">
+                  <strong>QA Tester</strong>
+                  <small>Open assigned projects, complete the checklist and sign off.</small>
+                </span>
+                <span id="testerRoleState" class="role-state">Tester sign in</span>
+                <span class="role-arrow"><svg><use href="#i-arrow"></use></svg></span>
+              </button>
+            </div>
+
+            <div class="role-security-row">
+              <div><svg><use href="#i-lock"></use></svg><span>One protected manager account</span></div>
+              <div><svg><use href="#i-shield"></use></svg><span>Email-based tester access</span></div>
+            </div>
+          </div>
+
           <div id="setupView" class="auth-view is-hidden">
-            <span class="pill"><svg><use href="#i-lock"></use></svg> First-time secure setup</span>
-            <h2>Create your manager account</h2>
-            <p class="auth-intro">This becomes the only manager account. Testers are created later using their email addresses.</p>
+            <button class="auth-back" type="button" data-auth-back><svg><use href="#i-arrow"></use></svg><span>Back to roles</span></button>
+            <span class="pill manager-pill"><svg><use href="#i-shield"></use></svg> Manager setup</span>
+            <h2>Create the manager account</h2>
+            <p class="auth-intro">This is the only manager account. After setup, the manager can add tester accounts using their email addresses.</p>
             <form id="setupForm" class="form-stack">
               <label><span>Your full name</span><div class="input-shell"><input id="setupName" type="text" placeholder="e.g. Ayushman Somvanshi" autocomplete="name" required /></div></label>
               <label><span>Manager email address</span><div class="input-shell"><input id="setupEmail" type="email" placeholder="you@company.com" autocomplete="email" required /></div></label>
@@ -72,19 +135,21 @@
               <label><span>Confirm password</span><div class="input-shell password-shell"><input id="setupConfirm" type="password" placeholder="Repeat your password" autocomplete="new-password" minlength="8" required /><button class="password-toggle" type="button" data-toggle-password="setupConfirm" aria-label="Show password"><svg><use href="#i-eye"></use></svg></button></div></label>
               <button class="btn btn-primary btn-wide btn-auth" type="submit"><span>Create manager workspace</span><svg><use href="#i-arrow"></use></svg></button>
             </form>
-            <p class="secure-note"><svg><use href="#i-shield"></use></svg> Password is stored as a one-way hash in this browser.</p>
+            <p class="secure-note"><svg><use href="#i-shield"></use></svg> Your password is stored as a secure one-way hash.</p>
           </div>
 
           <div id="loginView" class="auth-view is-hidden">
-            <span class="pill"><svg><use href="#i-lock"></use></svg> Protected workspace</span>
-            <h2>Welcome back</h2>
-            <p class="auth-intro">Sign in with your registered email address. Your manager or tester role is detected automatically.</p>
+            <button class="auth-back" type="button" data-auth-back><svg><use href="#i-arrow"></use></svg><span>Back to roles</span></button>
+            <span id="loginRolePill" class="pill"><svg><use href="#i-lock"></use></svg> Protected workspace</span>
+            <h2 id="loginTitle">Welcome back</h2>
+            <p id="loginIntro" class="auth-intro">Sign in with your registered email address and password.</p>
             <form id="loginForm" class="form-stack">
+              <input id="loginRole" type="hidden" value="" />
               <label><span>Email address</span><div class="input-shell"><input id="loginEmail" type="email" placeholder="name@company.com" autocomplete="email" required /></div></label>
               <label><span>Password</span><div class="input-shell password-shell"><input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required /><button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-label="Show password"><svg><use href="#i-eye"></use></svg></button></div></label>
-              <button class="btn btn-primary btn-wide btn-auth" type="submit"><span>Enter QAGarden</span><svg><use href="#i-arrow"></use></svg></button>
+              <button class="btn btn-primary btn-wide btn-auth" type="submit"><span id="loginButtonText">Enter QAGarden</span><svg><use href="#i-arrow"></use></svg></button>
             </form>
-            <div class="login-help"><span class="help-dot"></span><p>Manager access is restricted to the single manager email created during setup.</p></div>
+            <div id="loginHelp" class="login-help"><span class="help-dot"></span><p>Access is matched to the selected role and registered email address.</p></div>
           </div>
         </div>
       </main>

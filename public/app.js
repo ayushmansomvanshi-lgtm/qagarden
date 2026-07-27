@@ -64,6 +64,7 @@ let workspace = { user: null, manager: null, testers: [], projects: [] };
 let currentView = "assignments";
 let selectedProjectId = sessionStorage.getItem(SELECTED_KEY) || null;
 let confirmResolver = null;
+let selectedAuthRole = null;
 
 function icon(name, className = "") {
   return `<svg class="${className}" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
@@ -215,6 +216,7 @@ async function setupApp() {
 function bindEvents() {
   $("#setupForm").addEventListener("submit", handleManagerSetup);
   $("#loginForm").addEventListener("submit", handleLogin);
+  initAuthMotion();
   $("#logoutButton").addEventListener("click", handleLogout);
   $("#themeToggle").addEventListener("click", toggleTheme);
   $("#menuButton").addEventListener("click", () => $("#sidebar").classList.add("open"));
@@ -235,10 +237,76 @@ function bindEvents() {
 function showAuth() {
   $("#appShell").classList.add("is-hidden");
   $("#authScreen").classList.remove("is-hidden");
-  const firstRun = Boolean(bootstrap.setupRequired);
-  $("#setupView").classList.toggle("is-hidden", !firstRun);
-  $("#loginView").classList.toggle("is-hidden", firstRun);
-  setTimeout(() => $(firstRun ? "#setupName" : "#loginEmail")?.focus(), 120);
+  selectedAuthRole = null;
+  $("#loginRole").value = "";
+  $("#roleView").classList.remove("is-hidden");
+  $("#setupView").classList.add("is-hidden");
+  $("#loginView").classList.add("is-hidden");
+  $("#managerRoleState").textContent = bootstrap.setupRequired ? "Create manager account" : "Manager sign in";
+  $("#testerRoleState").textContent = bootstrap.setupRequired ? "Available after manager setup" : "Tester sign in";
+  $("[data-auth-role='tester']").classList.toggle("role-not-ready", Boolean(bootstrap.setupRequired));
+  setTimeout(() => $("[data-auth-role='manager']")?.focus(), 120);
+}
+
+function chooseAuthRole(role) {
+  if (!['manager', 'tester'].includes(role)) return;
+  if (role === 'tester' && bootstrap.setupRequired) {
+    toast('The manager must create the workspace before testers can sign in.', 'error');
+    return;
+  }
+  selectedAuthRole = role;
+  $("#roleView").classList.add("is-hidden");
+  if (role === 'manager' && bootstrap.setupRequired) {
+    $("#setupView").classList.remove("is-hidden");
+    $("#loginView").classList.add("is-hidden");
+    setTimeout(() => $("#setupName")?.focus(), 120);
+    return;
+  }
+  $("#setupView").classList.add("is-hidden");
+  $("#loginView").classList.remove("is-hidden");
+  $("#loginRole").value = role;
+  const manager = role === 'manager';
+  $("#loginRolePill").innerHTML = `${icon(manager ? 'shield' : 'check')} ${manager ? 'Manager workspace' : 'Tester workspace'}`;
+  $("#loginRolePill").classList.toggle('tester-pill', !manager);
+  $("#loginTitle").textContent = manager ? 'Manager sign in' : 'Tester sign in';
+  $("#loginIntro").textContent = manager
+    ? 'Use the protected manager email and password to manage assignments, testers and audits.'
+    : 'Use the email and temporary password created for you by the QA Manager.';
+  $("#loginButtonText").textContent = manager ? 'Enter manager workspace' : 'Open assigned audits';
+  $("#loginHelp p").textContent = manager
+    ? 'Only the single registered manager account can access management controls.'
+    : 'Tester access shows only projects assigned to this email address.';
+  $("#loginForm").reset();
+  $("#loginRole").value = role;
+  setTimeout(() => $("#loginEmail")?.focus(), 120);
+}
+
+function returnToRoleChoice() {
+  selectedAuthRole = null;
+  $("#setupForm").reset();
+  $("#loginForm").reset();
+  $("#setupView").classList.add("is-hidden");
+  $("#loginView").classList.add("is-hidden");
+  $("#roleView").classList.remove("is-hidden");
+  setTimeout(() => $("[data-auth-role='manager']")?.focus(), 100);
+}
+
+function initAuthMotion() {
+  const screen = $("#authScreen");
+  const shell = $("#authShell");
+  if (!screen || !shell || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  screen.addEventListener('pointermove', (event) => {
+    const x = event.clientX / window.innerWidth - 0.5;
+    const y = event.clientY / window.innerHeight - 0.5;
+    shell.style.setProperty('--auth-rotate-x', `${(-y * 1.4).toFixed(2)}deg`);
+    shell.style.setProperty('--auth-rotate-y', `${(x * 1.7).toFixed(2)}deg`);
+    screen.style.setProperty('--pointer-x', `${event.clientX}px`);
+    screen.style.setProperty('--pointer-y', `${event.clientY}px`);
+  });
+  screen.addEventListener('pointerleave', () => {
+    shell.style.setProperty('--auth-rotate-x', '0deg');
+    shell.style.setProperty('--auth-rotate-y', '0deg');
+  });
 }
 
 async function handleManagerSetup(event) {
@@ -280,6 +348,7 @@ async function handleLogin(event) {
     const result = await api("/api/login", {
       method: "POST",
       body: {
+        role: $("#loginRole").value,
         email: $("#loginEmail").value.trim(),
         password: $("#loginPassword").value
       }
@@ -293,7 +362,7 @@ async function handleLogin(event) {
     toast(error.message, "error");
   } finally {
     submit.disabled = false;
-    submit.innerHTML = `<span>Enter QAGarden</span>${icon("arrow")}`;
+    submit.innerHTML = `<span>${selectedAuthRole === "manager" ? "Enter manager workspace" : "Open assigned audits"}</span>${icon("arrow")}`;
   }
 }
 
@@ -637,6 +706,11 @@ function signedDetails(project) {
 function handleClick(event) {
   const passwordToggle = event.target.closest("[data-toggle-password]");
   if (passwordToggle) return togglePassword(passwordToggle);
+
+  const roleButton = event.target.closest("[data-auth-role]");
+  if (roleButton) return chooseAuthRole(roleButton.dataset.authRole);
+
+  if (event.target.closest("[data-auth-back]")) return returnToRoleChoice();
 
   const nav = event.target.closest("[data-view]");
   if (nav) {

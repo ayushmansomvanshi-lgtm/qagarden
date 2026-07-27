@@ -1,45 +1,26 @@
-# QAGarden v2
+# QAGarden v3
 
-QAGarden is a manager/tester website QA checklist with server-side authentication.
+A role-based QA checklist and sign-off workspace with a polished animated interface.
 
-## Features
+## Highlights
 
-- One manager account created during first-time setup
-- Testers created by name, email address and temporary password
-- Email/password login for manager and testers
-- Manager can assign an audit to a tester or to themselves
-- Manager can open and complete any audit checklist
-- Tester can only see audits assigned to their email account
-- Simple Checked / Not checked workflow
-- Records who checked each item and when
-- All 36 checks required before sign-off
-- Manager can reopen signed audits
-- Data saved on the server in `data/qagarden.json`
+- Role selection appears before login: **QA Manager** or **QA Tester**
+- First manager selection creates the single protected manager account
+- Manager login and tester login are validated separately
+- Manager can create tester accounts by email, assign projects, test audits and reopen sign-offs
+- Tester sees only assigned projects, checklist and sign-off
+- 36 focused checks with 100% completion required before sign-off
+- Server-side sessions and scrypt password hashing
+- Animated 3D QA cube, floating audit cards, parallax and polished hover effects
+- Responsive design and reduced-motion accessibility support
 
 ## Run
 
 ```bash
+cd qagarden-auth-v3
 npm start
 ```
 
-No package installation is required. On macOS, you can also double-click `start-qagarden.command`.
+Open `http://localhost:3001`.
 
-Open:
-
-```text
-http://localhost:3001
-```
-
-To use another port:
-
-```bash
-PORT=4000 npm start
-```
-
-## Important
-
-Tester email is used as the login ID. No npm install is required. This version does not send email invitations. Share the temporary password securely with the tester.
-# QAGarden
-# QAGarden
-# QAGarden
-# QAGarden
+No `npm install` is required. Data is stored locally in `data/qagarden.json`, which is ignored by Git.
