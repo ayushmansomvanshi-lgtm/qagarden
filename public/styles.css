@@ -1074,3 +1074,87 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
   .auth-orb, .auth-story::before, .auth-story::after, .visual-halo, .qa-cube-wrap, .qa-cube, .orbit, .float-card, .live-dot { animation: none !important; }
   .auth-shell, .role-choice, .metric-card, .btn, .auth-view { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* QAGarden v3.1 stability hotfix
+   The 3D animation is now isolated to the small QA object. The full login panel
+   never tilts, so text, role cards and form controls stay sharp and fixed. */
+.auth-screen {
+  perspective: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.auth-shell,
+.auth-shell:hover {
+  --auth-rotate-x: 0deg;
+  --auth-rotate-y: 0deg;
+  transform: none !important;
+  transform-style: flat;
+  transition: box-shadow .3s var(--ease);
+  animation: stableShellIn .5s var(--ease) both;
+  will-change: auto;
+}
+
+@keyframes stableShellIn {
+  from { opacity: 0; translate: 0 14px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+.auth-story {
+  isolation: isolate;
+  transform: translateZ(0);
+}
+
+.auth-brand,
+.auth-copy,
+.auth-metrics {
+  transform: none;
+}
+
+.quality-visual {
+  transform: none;
+  isolation: isolate;
+  contain: layout paint;
+}
+
+.qa-cube-wrap,
+.qa-cube,
+.cube-face,
+.orbit,
+.float-card {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.role-choice {
+  transform-style: flat;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: auto;
+}
+
+.role-choice:hover,
+.role-choice:focus-visible {
+  transform: translateY(-3px);
+}
+
+.role-choice:hover .role-choice-icon,
+.role-choice:focus-visible .role-choice-icon {
+  transform: rotate(-3deg) scale(1.04);
+}
+
+.auth-panel .input-shell input:hover,
+.auth-panel .input-shell input:focus {
+  transform: none;
+}
+
+@media (max-width: 900px) {
+  .auth-shell,
+  .auth-shell:hover { transform: none !important; }
+  .quality-visual { contain: paint; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-shell { animation: none !important; }
+}

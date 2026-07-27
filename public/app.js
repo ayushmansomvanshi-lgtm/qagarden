@@ -293,20 +293,33 @@ function returnToRoleChoice() {
 
 function initAuthMotion() {
   const screen = $("#authScreen");
-  const shell = $("#authShell");
-  if (!screen || !shell || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!screen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  // Keep the large login shell fixed. Rotating the entire 1280px container caused
+  // clipping, flicker and layout jumps on Chrome/macOS. Only the background glow
+  // follows the pointer now, while the small QA object keeps its own 3D animation.
+  let frame = 0;
+  let pointerX = window.innerWidth / 2;
+  let pointerY = window.innerHeight / 2;
+
+  const paint = () => {
+    frame = 0;
+    screen.style.setProperty('--pointer-x', `${pointerX}px`);
+    screen.style.setProperty('--pointer-y', `${pointerY}px`);
+  };
+
   screen.addEventListener('pointermove', (event) => {
-    const x = event.clientX / window.innerWidth - 0.5;
-    const y = event.clientY / window.innerHeight - 0.5;
-    shell.style.setProperty('--auth-rotate-x', `${(-y * 1.4).toFixed(2)}deg`);
-    shell.style.setProperty('--auth-rotate-y', `${(x * 1.7).toFixed(2)}deg`);
-    screen.style.setProperty('--pointer-x', `${event.clientX}px`);
-    screen.style.setProperty('--pointer-y', `${event.clientY}px`);
-  });
+    if (event.pointerType && event.pointerType !== 'mouse') return;
+    pointerX = event.clientX;
+    pointerY = event.clientY;
+    if (!frame) frame = window.requestAnimationFrame(paint);
+  }, { passive: true });
+
   screen.addEventListener('pointerleave', () => {
-    shell.style.setProperty('--auth-rotate-x', '0deg');
-    shell.style.setProperty('--auth-rotate-y', '0deg');
-  });
+    pointerX = window.innerWidth / 2;
+    pointerY = window.innerHeight / 2;
+    if (!frame) frame = window.requestAnimationFrame(paint);
+  }, { passive: true });
 }
 
 async function handleManagerSetup(event) {

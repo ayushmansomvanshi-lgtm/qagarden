@@ -1,4 +1,4 @@
-# QAGarden v3
+# QAGarden v3.1 Stable
 
 A role-based QA checklist and sign-off workspace with a polished animated interface.
 
@@ -24,3 +24,11 @@ npm start
 Open `http://localhost:3001`.
 
 No `npm install` is required. Data is stored locally in `data/qagarden.json`, which is ignored by Git.
+
+
+## Stability hotfix
+
+- Removed full-page mouse tilt that could make the authentication screen jump or clip.
+- Kept the 3D QA object animation isolated inside the visual panel.
+- Stabilised role-card hover, form focus and Chrome/macOS rendering.
+- Added cache-busted CSS and JavaScript URLs.
