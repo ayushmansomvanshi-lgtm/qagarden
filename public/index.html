@@ -8,7 +8,7 @@
   <title>QAGarden</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=3.3.0" />
+  <link rel="stylesheet" href="styles.css?v=3.4.0" />
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -207,13 +207,13 @@
   </dialog>
 
   <dialog id="testerDialog" class="dialog">
-    <form id="testerForm" class="dialog-card dialog-medium">
+    <form id="testerForm" class="dialog-card dialog-medium" autocomplete="off">
       <div class="dialog-head"><div><span class="eyebrow">Tester access</span><h2 id="testerDialogTitle">Add tester</h2></div><button type="button" class="icon-button" data-close-tester><svg><use href="#i-x"></use></svg></button></div>
       <input id="testerId" type="hidden" />
       <div class="form-grid">
-        <label class="span-2"><span>Tester name</span><input id="testerName" type="text" placeholder="e.g. Rahul Sharma" required /></label>
-        <label class="span-2"><span>Tester email address</span><input id="testerEmail" type="email" placeholder="rahul@company.com" autocomplete="email" required /></label>
-        <label class="span-2"><span id="testerPasswordLabel">Temporary password</span><div class="input-shell password-shell dialog-input-shell"><input id="testerPassword" type="password" placeholder="Minimum 8 characters" minlength="8" /><button class="password-toggle" type="button" data-toggle-password="testerPassword" aria-label="Show password"><svg><use href="#i-eye"></use></svg></button></div><small id="testerPasswordHelp" class="field-help">Required for a new tester.</small></label>
+        <label class="span-2"><span>Tester name</span><input id="testerName" type="text" placeholder="e.g. Rahul Sharma" autocomplete="off" required /></label>
+        <label class="span-2"><span>Tester email address</span><input id="testerEmail" type="email" placeholder="rahul@company.com" autocomplete="off" required /></label>
+        <label class="span-2"><span id="testerPasswordLabel">Temporary password</span><div class="input-shell password-shell dialog-input-shell"><input id="testerPassword" type="password" placeholder="Minimum 8 characters" autocomplete="new-password" minlength="8" /><button class="password-toggle" type="button" data-toggle-password="testerPassword" aria-label="Show password"><svg><use href="#i-eye"></use></svg></button></div><small id="testerPasswordHelp" class="field-help">Required for a new tester.</small></label>
       </div>
       <div class="dialog-actions"><button type="button" class="btn btn-muted" data-close-tester>Cancel</button><button type="submit" class="btn btn-primary">Save tester</button></div>
     </form>
@@ -238,6 +238,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=3.3.0"></script>
+  <script src="app.js?v=3.4.0"></script>
 </body>
 </html>

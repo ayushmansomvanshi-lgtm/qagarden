@@ -8,3 +8,6 @@
 6. Hard-refresh the main website.
 
 The app reads environment variables at request time, so both current Vercel KV names and older Upstash names are supported.
+
+
+After deployment, hard refresh once so app.js?v=3.4.0 is loaded. Existing Redis manager/tester data is preserved because the namespace remains unchanged.

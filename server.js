@@ -162,7 +162,7 @@ async function handleApi(req, res, url) {
     const health = await storage.testConnection();
     return json(res, health.ok || health.storage === "local-file" ? 200 : 503, {
       ...health,
-      version: "3.3.0"
+      version: "3.4.0"
     });
   }
 
@@ -170,7 +170,7 @@ async function handleApi(req, res, url) {
     const health = await storage.testConnection();
     return json(res, health.ok || health.storage === "local-file" ? 200 : 503, {
       ...health,
-      version: "3.3.0",
+      version: "3.4.0",
       note: "No secret values are exposed by this endpoint."
     });
   }
@@ -208,6 +208,9 @@ async function handleApi(req, res, url) {
     const email = normaliseEmail(body.email);
     const password = String(body.password || "");
     if (!requestedRole) return json(res, 400, { error: "Choose Manager or Tester before signing in." });
+    if (requestedRole === "tester" && !db.manager) {
+      return json(res, 401, { error: "Your tester account is not ready yet. Ask the QA Manager to create the workspace and assign your email and password." });
+    }
     const manager = requestedRole === "manager" && db.manager?.email === email ? { ...db.manager, role: "manager" } : null;
     const testerRecord = requestedRole === "tester"
       ? db.testers.find((item) => item.email === email && item.active !== false)
@@ -445,7 +448,7 @@ async function requestHandler(req, res) {
           error: error.message,
           code: error.code,
           diagnostics: error.diagnostics || storage.getDiagnostics(),
-          version: "3.3.0"
+          version: "3.4.0"
         });
       } else if (error.code === "STORAGE_ERROR") {
         json(res, 502, { error: "Cloud storage is unavailable. Verify the Upstash environment variables and redeploy.", code: error.code });

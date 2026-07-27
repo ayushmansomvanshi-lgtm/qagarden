@@ -65,6 +65,7 @@ let currentView = "assignments";
 let selectedProjectId = sessionStorage.getItem(SELECTED_KEY) || null;
 let confirmResolver = null;
 let selectedAuthRole = null;
+let authTransitionInFlight = false;
 
 function icon(name, className = "") {
   return `<svg class="${className}" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
@@ -157,19 +158,30 @@ function projectStatus(project) {
 }
 
 function toast(message, type = "") {
+  const region = $("#toastRegion");
+  const duplicate = $$(".toast", region).find((item) => item.dataset.message === message);
+  if (duplicate) {
+    duplicate.classList.remove("toast-pulse");
+    requestAnimationFrame(() => duplicate.classList.add("toast-pulse"));
+    return;
+  }
   const element = document.createElement("div");
   element.className = `toast ${type}`;
+  element.dataset.message = message;
   element.textContent = message;
-  $("#toastRegion").append(element);
+  region.append(element);
   setTimeout(() => element.remove(), 3400);
 }
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
     method: options.method || "GET",
-    headers: options.body ? { "Content-Type": "application/json" } : undefined,
+    headers: options.body
+      ? { "Content-Type": "application/json", "Cache-Control": "no-cache" }
+      : { "Cache-Control": "no-cache" },
     body: options.body ? JSON.stringify(options.body) : undefined,
-    credentials: "same-origin"
+    credentials: "same-origin",
+    cache: "no-store"
   });
 
   if (response.status === 204) return null;
@@ -204,13 +216,30 @@ async function setupApp() {
   applyTheme();
   bindEvents();
   try {
-    bootstrap = await api("/api/bootstrap");
+    bootstrap = await refreshBootstrap();
     if (bootstrap.user) await showApp();
     else showAuth();
   } catch (error) {
     toast(error.message, "error");
     showAuth();
   }
+}
+
+async function refreshBootstrap() {
+  const latest = await api(`/api/bootstrap?refresh=${Date.now()}`);
+  bootstrap = {
+    setupRequired: Boolean(latest.setupRequired),
+    user: latest.user || null
+  };
+  return bootstrap;
+}
+
+function renderRoleState() {
+  $("#managerRoleState").textContent = bootstrap.setupRequired ? "Create manager account" : "Manager sign in";
+  $("#testerRoleState").textContent = "Tester sign in";
+  const testerButton = $("[data-auth-role='tester']");
+  testerButton.classList.remove("role-not-ready");
+  testerButton.removeAttribute("aria-disabled");
 }
 
 function bindEvents() {
@@ -232,6 +261,15 @@ function bindEvents() {
   });
   document.addEventListener("click", handleClick);
   document.addEventListener("change", handleChange);
+  window.addEventListener("focus", async () => {
+    if ($("#authScreen")?.classList.contains("is-hidden") || authTransitionInFlight) return;
+    try {
+      await refreshBootstrap();
+      renderRoleState();
+    } catch {
+      // Keep the current role screen usable. A visible API action will show any error.
+    }
+  });
 }
 
 function showAuth() {
@@ -242,43 +280,69 @@ function showAuth() {
   $("#roleView").classList.remove("is-hidden");
   $("#setupView").classList.add("is-hidden");
   $("#loginView").classList.add("is-hidden");
-  $("#managerRoleState").textContent = bootstrap.setupRequired ? "Create manager account" : "Manager sign in";
-  $("#testerRoleState").textContent = bootstrap.setupRequired ? "Available after manager setup" : "Tester sign in";
-  $("[data-auth-role='tester']").classList.toggle("role-not-ready", Boolean(bootstrap.setupRequired));
+  renderRoleState();
   setTimeout(() => $("[data-auth-role='manager']")?.focus(), 120);
 }
 
-function chooseAuthRole(role) {
-  if (!['manager', 'tester'].includes(role)) return;
-  if (role === 'tester' && bootstrap.setupRequired) {
-    toast('The manager must create the workspace before testers can sign in.', 'error');
-    return;
-  }
-  selectedAuthRole = role;
-  $("#roleView").classList.add("is-hidden");
-  if (role === 'manager' && bootstrap.setupRequired) {
-    $("#setupView").classList.remove("is-hidden");
+async function chooseAuthRole(role) {
+  if (!['manager', 'tester'].includes(role) || authTransitionInFlight) return;
+  authTransitionInFlight = true;
+  const roleButtons = $$('[data-auth-role]');
+  roleButtons.forEach((button) => {
+    button.setAttribute('aria-busy', 'true');
+    button.classList.add('role-checking');
+  });
+
+  try {
+    // Always re-check the server before deciding between manager setup and login.
+    // This fixes stale tabs where a manager/tester was created in another browser tab.
+    await refreshBootstrap();
+    if (bootstrap.user) {
+      await showApp();
+      return;
+    }
+
+    selectedAuthRole = role;
+    $("#roleView").classList.add("is-hidden");
+
+    if (role === 'manager' && bootstrap.setupRequired) {
+      $("#setupView").classList.remove("is-hidden");
+      $("#loginView").classList.add("is-hidden");
+      setTimeout(() => $("#setupName")?.focus(), 120);
+      return;
+    }
+
+    $("#setupView").classList.add("is-hidden");
+    $("#loginView").classList.remove("is-hidden");
+    $("#loginRole").value = role;
+    const manager = role === 'manager';
+    $("#loginRolePill").innerHTML = `${icon(manager ? 'shield' : 'check')} ${manager ? 'Manager workspace' : 'Tester workspace'}`;
+    $("#loginRolePill").classList.toggle('tester-pill', !manager);
+    $("#loginTitle").textContent = manager ? 'Manager sign in' : 'Tester sign in';
+    $("#loginIntro").textContent = manager
+      ? 'Use the protected manager email and password to manage assignments, testers and audits.'
+      : 'Enter the tester email and password created for you by the QA Manager.';
+    $("#loginButtonText").textContent = manager ? 'Enter manager workspace' : 'Open assigned audits';
+    $("#loginHelp p").textContent = manager
+      ? 'Only the single registered manager account can access management controls.'
+      : bootstrap.setupRequired
+        ? 'Your manager must create the workspace and your tester account first. There is no public tester sign-up.'
+        : 'Use the exact email and password assigned by your manager. You will see only your assigned projects.';
+    $("#loginForm").reset();
+    $("#loginRole").value = role;
+    setTimeout(() => $("#loginEmail")?.focus(), 120);
+  } catch (error) {
+    $("#roleView").classList.remove("is-hidden");
+    $("#setupView").classList.add("is-hidden");
     $("#loginView").classList.add("is-hidden");
-    setTimeout(() => $("#setupName")?.focus(), 120);
-    return;
+    toast(error.message, "error");
+  } finally {
+    authTransitionInFlight = false;
+    roleButtons.forEach((button) => {
+      button.removeAttribute('aria-busy');
+      button.classList.remove('role-checking');
+    });
   }
-  $("#setupView").classList.add("is-hidden");
-  $("#loginView").classList.remove("is-hidden");
-  $("#loginRole").value = role;
-  const manager = role === 'manager';
-  $("#loginRolePill").innerHTML = `${icon(manager ? 'shield' : 'check')} ${manager ? 'Manager workspace' : 'Tester workspace'}`;
-  $("#loginRolePill").classList.toggle('tester-pill', !manager);
-  $("#loginTitle").textContent = manager ? 'Manager sign in' : 'Tester sign in';
-  $("#loginIntro").textContent = manager
-    ? 'Use the protected manager email and password to manage assignments, testers and audits.'
-    : 'Use the email and temporary password created for you by the QA Manager.';
-  $("#loginButtonText").textContent = manager ? 'Enter manager workspace' : 'Open assigned audits';
-  $("#loginHelp p").textContent = manager
-    ? 'Only the single registered manager account can access management controls.'
-    : 'Tester access shows only projects assigned to this email address.';
-  $("#loginForm").reset();
-  $("#loginRole").value = role;
-  setTimeout(() => $("#loginEmail")?.focus(), 120);
 }
 
 function returnToRoleChoice() {

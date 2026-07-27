@@ -1,4 +1,4 @@
-# QAGarden v3.3 — Vercel KV Detection Fix
+# QAGarden v3.4 — Vercel KV Detection Fix
 
 This release fixes the persistent-storage warning when Vercel has connected an Upstash database using the current Vercel KV variable names.
 
@@ -29,7 +29,7 @@ rsync -av --delete \
   --exclude=.git \
   --exclude=node_modules \
   --exclude=data/qagarden.json \
-  /path/to/qagarden-v3.3-vercel-kv-fixed/ \
+  /path/to/qagarden-v3.4-vercel-kv-fixed/ \
   /path/to/your/qagarden-repository/
 ```
 
@@ -73,3 +73,13 @@ npm start
 ```
 
 Open `http://localhost:3001`. Local data is saved in `data/qagarden.json`.
+
+
+## Authentication flow
+
+1. Every visitor first chooses **QA Manager** or **QA Tester**.
+2. The first Manager creates the single protected manager account.
+3. The Manager creates each tester using name, email and a temporary password.
+4. The tester chooses **QA Tester** and signs in with that exact email and password.
+5. Tester self-registration is intentionally disabled.
+6. Role status is refreshed from the server on every role click, so a tab opened before account creation will not remain stale.

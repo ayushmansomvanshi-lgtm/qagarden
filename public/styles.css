@@ -1162,3 +1162,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 /* QAGarden v3.2: Vercel persistence/API compatibility release. */
 
 /* QAGarden v3.3: robust Vercel KV and Upstash variable detection. */
+
+
+/* QAGarden v3.4: fresh role selection and manager-created tester login flow. */
+.role-choice.role-checking { cursor: progress; }
+.role-choice.role-checking .role-arrow { animation: qagardenRolePulse .8s ease-in-out infinite alternate; }
+@keyframes qagardenRolePulse { to { transform: translate(2px,-50%) scale(1.08); box-shadow: 0 0 0 7px rgba(109,93,252,.08); } }
+.toast.toast-pulse { animation: qagardenToastPulse .28s ease-out; }
+@keyframes qagardenToastPulse { 50% { transform: translateY(-3px) scale(1.015); } }
