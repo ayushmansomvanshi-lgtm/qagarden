@@ -1,0 +1,12 @@
+{
+  "name": "QAGarden",
+  "short_name": "QAGarden",
+  "description": "A focused QA checklist, assignment and sign-off workspace.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#6d5dfc",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
