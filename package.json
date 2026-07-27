@@ -1,8 +1,8 @@
 {
   "name": "qagarden",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "private": true,
-  "description": "Vercel-ready role-based website QA checklist with synchronised Vercel KV/Upstash storage and manager-created tester authentication",
+  "description": "QAGarden role-based QA checklist with a bold editorial gallery interface; authentication and storage logic preserved",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

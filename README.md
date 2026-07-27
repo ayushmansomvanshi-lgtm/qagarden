@@ -20,3 +20,7 @@ Verify:
 `/api/health`
 
 The response should show version `3.5.0`, `configured: true`, and one or more configured stores.
+
+## v3.6 editorial UI release
+
+This release changes presentation only. It adds `public/studio-ui.css` as a visual override inspired by bold editorial portfolio galleries. Authentication, manager/tester permissions, API routes, Redis/KV storage, audit assignments, checklist state and sign-off functions are unchanged from v3.5.
