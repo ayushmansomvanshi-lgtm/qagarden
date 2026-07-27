@@ -1,12 +1,10 @@
-# Deploy QAGarden v3.5
+# Deploy QAGarden v3.7 to Vercel
 
-1. Replace the files in the existing Git repository with this release.
-2. Preserve `.git`, and do not upload `data/qagarden.json`.
-3. Commit and push to `main`.
-4. Wait for the production Vercel deployment to finish.
-5. Open `/api/health` and confirm version `3.5.0`.
-6. Hard refresh with Command + Shift + R.
-7. Manager: open Tester accounts, edit the tester, enter a new password, and Save tester.
-8. Log out, choose QA Tester, and use that tester email and new password.
+1. Copy this release into the existing Git repository while preserving `.git` and `data/qagarden.json`.
+2. Commit and push to the existing `main` branch.
+3. Keep the current Vercel KV/Upstash environment variables connected.
+4. Wait for Vercel to finish the production deployment.
+5. Hard-refresh the site using `Command + Shift + R`.
+6. Verify Manager login, Tester login, project assignment, checklist toggling and sign-off.
 
-This release automatically reconciles data if old deployments wrote to `UPSTASH_*` while newer deployments read `KV_*`.
+This release changes only HTML metadata and CSS presentation. API, authentication, data storage and application functions are unchanged.

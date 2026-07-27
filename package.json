@@ -1,8 +1,8 @@
 {
   "name": "qagarden",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "private": true,
-  "description": "QAGarden role-based QA checklist with a bold editorial gallery interface; authentication and storage logic preserved",
+  "description": "QAGarden role-based QA checklist with a premium aurora command-centre interface; application logic preserved",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

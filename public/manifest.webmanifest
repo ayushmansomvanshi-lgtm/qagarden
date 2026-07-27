@@ -4,9 +4,14 @@
   "description": "A focused QA checklist, assignment and sign-off workspace.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f0f0ea",
-  "theme_color": "#dfff00",
+  "background_color": "#070b17",
+  "theme_color": "#0b1024",
   "icons": [
-    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }
