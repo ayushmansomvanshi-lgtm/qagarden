@@ -1,10 +1,70 @@
-# QAGarden v3.2 — Vercel Storage Fix
+# QAGarden v3.3 — Vercel KV Detection Fix
 
-This release fixes the `/api/setup` 500 error on Vercel.
+This release fixes the persistent-storage warning when Vercel has connected an Upstash database using the current Vercel KV variable names.
 
-## Why the earlier deployment failed
+## Supported environment-variable names
 
-The previous server stored users, projects, checklist progress and sessions in `data/qagarden.json`. That works locally, but a Vercel Function cannot persist writes inside the deployed project directory. This release uses Upstash Redis in Vercel and keeps the JSON-file fallback only for local development.
+QAGarden now automatically accepts either pair:
+
+```text
+KV_REST_API_URL
+KV_REST_API_TOKEN
+```
+
+or:
+
+```text
+UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN
+```
+
+It also recognises `VERCEL_KV_REST_API_*` and `REDIS_REST_*` aliases.
+
+## Deploy to the existing GitHub repository
+
+Copy this release over the existing repository without copying local account data:
+
+```bash
+rsync -av --delete \
+  --exclude=.git \
+  --exclude=node_modules \
+  --exclude=data/qagarden.json \
+  /path/to/qagarden-v3.3-vercel-kv-fixed/ \
+  /path/to/your/qagarden-repository/
+```
+
+Then:
+
+```bash
+git add .
+git commit -m "Fix Vercel KV persistent storage detection"
+git push origin main
+```
+
+Vercel should deploy the new commit automatically. If it does not, redeploy the latest commit manually.
+
+## Verify
+
+Open:
+
+```text
+https://YOUR-DOMAIN/api/health
+```
+
+Expected response:
+
+```json
+{
+  "ok": true,
+  "storage": "upstash-redis",
+  "configured": true,
+  "urlVariable": "KV_REST_API_URL",
+  "tokenVariable": "KV_REST_API_TOKEN",
+  "version": "3.3.0"
+}
+```
+
+The endpoint never returns secret values.
 
 ## Local run
 
@@ -12,38 +72,4 @@ The previous server stored users, projects, checklist progress and sessions in `
 npm start
 ```
 
-Open `http://localhost:3001`.
-
-Local data is saved in `data/qagarden.json`.
-
-## Required Vercel setup
-
-1. Open the QAGarden project in Vercel.
-2. Open **Storage / Marketplace**.
-3. Add **Upstash Redis** and connect it to this project.
-4. Confirm these environment variables exist in the Vercel project:
-   - `UPSTASH_REDIS_REST_URL`
-   - `UPSTASH_REDIS_REST_TOKEN`
-5. Redeploy the latest Git commit.
-6. Open `/api/health`. It should return:
-
-```json
-{"ok":true,"storage":"upstash-redis"}
-```
-
-If storage is missing, the API now returns a readable `503` message instead of an unexplained `500`.
-
-## Git update
-
-```bash
-git add .
-git commit -m "Fix Vercel persistence with Upstash Redis"
-git push origin main
-```
-
-## Security
-
-- Passwords are hashed with scrypt.
-- Sessions are server-side and stored in Redis.
-- Authentication cookies are HttpOnly, SameSite=Lax and Secure on Vercel.
-- Never commit `.env` or Redis tokens.
+Open `http://localhost:3001`. Local data is saved in `data/qagarden.json`.

@@ -1160,3 +1160,5 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); backgr
 }
 
 /* QAGarden v3.2: Vercel persistence/API compatibility release. */
+
+/* QAGarden v3.3: robust Vercel KV and Upstash variable detection. */

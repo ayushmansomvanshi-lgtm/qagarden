@@ -1,8 +1,8 @@
 {
   "name": "qagarden",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "private": true,
-  "description": "Vercel-ready role-based website QA checklist with persistent Upstash Redis storage",
+  "description": "Vercel-ready role-based website QA checklist with robust Vercel KV and Upstash Redis detection",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

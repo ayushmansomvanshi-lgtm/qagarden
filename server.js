@@ -155,14 +155,28 @@ function matchPath(pathname, pattern) {
 }
 
 async function handleApi(req, res, url) {
-  const db = await readDb();
-  const user = await sessionUser(req, db);
   const method = req.method || "GET";
   const pathname = url.pathname;
 
   if (method === "GET" && pathname === "/api/health") {
-    return json(res, 200, { ok: true, storage: storage.mode() });
+    const health = await storage.testConnection();
+    return json(res, health.ok || health.storage === "local-file" ? 200 : 503, {
+      ...health,
+      version: "3.3.0"
+    });
   }
+
+  if (method === "GET" && pathname === "/api/storage-diagnostics") {
+    const health = await storage.testConnection();
+    return json(res, health.ok || health.storage === "local-file" ? 200 : 503, {
+      ...health,
+      version: "3.3.0",
+      note: "No secret values are exposed by this endpoint."
+    });
+  }
+
+  const db = await readDb();
+  const user = await sessionUser(req, db);
 
   if (method === "GET" && pathname === "/api/bootstrap") {
     return json(res, 200, { setupRequired: !db.manager, user: safeUser(user) });
@@ -427,7 +441,12 @@ async function requestHandler(req, res) {
     console.error(error);
     if (!res.headersSent) {
       if (error.code === "STORAGE_NOT_CONFIGURED") {
-        json(res, 503, { error: error.message, code: error.code });
+        json(res, 503, {
+          error: error.message,
+          code: error.code,
+          diagnostics: error.diagnostics || storage.getDiagnostics(),
+          version: "3.3.0"
+        });
       } else if (error.code === "STORAGE_ERROR") {
         json(res, 502, { error: "Cloud storage is unavailable. Verify the Upstash environment variables and redeploy.", code: error.code });
       } else {
