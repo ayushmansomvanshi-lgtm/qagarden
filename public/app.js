@@ -325,9 +325,7 @@ async function chooseAuthRole(role) {
     $("#loginButtonText").textContent = manager ? 'Enter manager workspace' : 'Open assigned audits';
     $("#loginHelp p").textContent = manager
       ? 'Only the single registered manager account can access management controls.'
-      : bootstrap.setupRequired
-        ? 'Your manager must create the workspace and your tester account first. There is no public tester sign-up.'
-        : 'Use the exact email and password assigned by your manager. You will see only your assigned projects.';
+      : 'Use the exact email and password assigned by your manager. Tester accounts are created only inside the Manager workspace.';
     $("#loginForm").reset();
     $("#loginRole").value = role;
     setTimeout(() => $("#loginEmail")?.focus(), 120);
